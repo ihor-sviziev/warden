@@ -19,6 +19,7 @@ jobs:
         version: ['6.0', '6.5', '6.6', '7.0']
         multiarch: ['true']
         include:
+          # Elasticsearch 4.1 and 6.4 images don't have the ARM optimized base images
           - version: '4.1'
             multiarch: 'false'
           - version: '6.4'
