@@ -17,19 +17,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        varnish: ['7.9', '7.10', '7.13', '7.16', '7.17']
+        multiarch: ['true']
         include:
+          # Varnish 6.8 image doesn't have the ARM optimized base images
           - version: '6.8'
             multiarch: 'false'
-          - version: '7.9'
-            multiarch: 'true'
-          - version: '7.10'
-            multiarch: 'true'
-          - version: '7.13'
-            multiarch: 'true'
-          - version: '7.16'
-            multiarch: 'true'
-          - version: '7.17'
-            multiarch: 'true'
 
     runs-on: ubuntu-latest
     steps:
