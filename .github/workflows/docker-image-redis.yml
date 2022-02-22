@@ -1,22 +1,56 @@
 name: Docker Image Redis
 on:
   schedule:
-  - cron: "0 6 1 * *"   # 6 AM UTC on 1st day of month
+    - cron: "0 6 1 * *"   # 6 AM UTC on 1st day of month
   push:
     paths:
-    - version
-    - images/.trigger
-    - images/redis/**
+      - version
+      - images/.trigger
+      - images/redis/**
     branches:
-    - develop
+      - multi-arch
 jobs:
   redis:
     name: Redis
+
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['3.2', '4.0', '5.0', '6.0', '6.2']
+        multiarch: ['true']
+
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - run: ./images/scripts/build.sh --push "${BUILD_GROUP}"
-      env:
-        BUILD_GROUP: redis
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (amd64, arm64)
+        uses: docker/build-push-action@v2
+        if: ${{ matrix.multiarch == 'true' }}
+        with:
+          file: images/redis/${{ matrix.version }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/redis:${{ matrix.version }}
+
+      - name: Build and push (amd64 only)
+        uses: docker/build-push-action@v2
+        if: ${{ matrix.multiarch == 'false' }}
+        with:
+          file: images/redis/${{ matrix.version }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/redis:${{ matrix.version }}
